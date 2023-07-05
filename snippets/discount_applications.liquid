@@ -1,0 +1,16 @@
+<div class="flex items-start justify-end flex-wrap mt-1 break-words color-text-default {{discount_class}}" spz-for="discount_item in {{discount_applications}}">
+  <div class="flex">
+    <spz-img
+      spz-if="${!!discount_item.icon}"
+      class="flex-shrink-0 mr-1"
+      src="${discount_item.icon}"
+      layout="fixed"
+      width="16"
+      height="16"
+      alt='{{alt}}'
+      object-fit="contain"
+    ></spz-img>
+    <span>${discount_item.title}</span>
+  </div>
+  <span spz-if="${discount_item.discount_amount > 0 || discount_item.amount > 0}" class="flex-shrink-0">(-<spz-currency style="display: inline-block;" layout="container" value="${discount_item.discount_amount || discount_item.amount}"></spz-currency>)</span>
+</div>

@@ -1,0 +1,98 @@
+<spz-product-form
+  id="product-info-body"
+  product-unavailable-status
+  product-id="{{product.id}}"
+  variant-id="{{ productSelectedVariant.id }}"
+  layout="container"
+  class="product-info-body lg:flex-1 lg:pl-20"
+  status="{% if productSelectedVariant %}{% if productSelectedVariant.id == nil %}product_unavailable{% elsif productSelectedVariant.available %}available{% else %}soldout{% endif %}{% else %}{% if product.available %}available{% else %}soldout{% endif %}{% endif %}"
+  @productChange="product-info-quantity.update(value=event.quantity,max=event.max,min=event.min);{% if enableVariantPriceOnAddToCart %}product-info-btn-price.rerender(data=event);{% endif %}product-detail-featured.rerender(data=event);{% if shop.wholesale_enabled %}product-info-prices-wholesale.rerender(data=event);{% else %}product-info-prices.rerender(data=event);{% endif %}{% unless enable_selected_variants %}product-info-variant-empty-option.toggleClass(class='hidden', force=true);{% endunless %}"
+  @atcSuccess="{% if settings.cart_style == 'drawer' %}atc-modal.open;{% elsif settings.cart_style == 'to_toast' %}add-card-toast-success.showToast(content='{{ "i18n.product.product_detail.added_to_bag_successfully" | t }}');{% elsif settings.cart_style == 'page' %}SPZ.navigateTo(url='{{ routes.cart_url }}');{% endif %}"
+  @atcError="theme-toast.showToast(content=event.message);"
+  {% for opt in product.options %}
+    @{{opt.name | append: 'Invalid' }}="{{opt.name | replace: ' ', '-'}}-error-tip.rerender(data=event);"
+    @{{opt.name | append: 'Valid' }}="{{opt.name | replace: ' ', '-'}}-error-tip.toggleClass(class='hidden', force=true);"
+  {% endfor %}
+  @buyNowError="theme-toast.showToast(content=event)"
+>
+  <form>
+    {% if section.blocks.size > 0 %}
+      <div class="product-info-body-inner product-info-body-z-index" id="product-info-body-inner-container">
+        {% for block in section.blocks %}
+          {% case block.type %}
+            {% when 'label' %}
+              {% assign custom_label_1 = block.settings.label1 %}
+              {% assign custom_label_2 = block.settings.label2 %}
+              {% if custom_label_1 or custom_label_2 %}
+                <div {{block.shoplaza_attributes}} class="product-info-custom-labels flex">
+                  {% include 'product_info_label', label: custom_label_1, ids: block.settings.ids1 %}
+                  {% include 'product_info_label', label: custom_label_2, ids: block.settings.ids2 %}
+                </div>
+              {% endif %}
+
+            {% when 'title' %}
+              {% assign mobile_product_title_style = block.settings.mobile_product_title_style %}
+            <h1 class="product-info__header_title m-0 type-heading-font-family text-base lg:text-xl leading-1.3 lg:leading-1.2 break-words product-title-color {% if mobile_product_title_style == 'one_line' %} md:truncate {% elsif mobile_product_title_style == 'hide' %} md:hidden {% endif %}" {{ block.shoplaza_attributes }}>{{ product.title | escape }}</h1>
+            {% when 'subtitle' %}
+              {% assign subtitle = product.brief %}
+              {% if subtitle %}
+                <div class="product-info__header_brief m-0 text-xs leading-1.3 opacity-60" {{ block.shoplaza_attributes }}>{{ subtitle | escape }}</div>
+              {% endif %}
+            {% when 'price' %}
+              {% if shop.wholesale_enabled %}
+                {% include 'product_info_price_wholesale' %}
+              {% else %}
+                {% include 'product_info_prices' %}
+              {% endif %}
+              {% if block.settings.show_sales %}
+                {% include 'product_info_price_in_sale' %}
+              {% endif %}
+              {% if product.mixed_wholesale %}
+                {% include 'mixed_wholesale_label', class: "mt-2 lg:mt-3" %}
+              {% endif %}
+              <div class="plugin-discount-wrap empty-hidden" role=[theme-seat-for-plugin]></div>
+            {% when 'variant' %}
+              {% include 'product_info_variants' %}
+            {% when 'qty' %}
+              <div class="mt-5 lg:mt-6" {{ block.shoplaza_attributes }}>
+                <div class="lg:body-plus-2 leading-1.3">{{ 'i18n.product.product_detail.qty' | t }}</div>
+                <spz-quantity
+                  class="product-info-qty mt-3"
+                  id="product-info-quantity"
+                  name="quantity"
+                  value="1"
+                  min="1"
+                  max="{{ productSelectedVariant.available_quantity | default: product.inventory_quantity }}"
+                  icon-class="product-info-qty-btn clear flex items-center justify-center flex-shrink-0"
+                  input-class="product-info-qty-input clear flex-shrink-0 body-plus-2 text-center"
+                  height="40"
+                  layout="fixed-height"
+                >
+                  {% include 'icon_decrease', attr: 'role="decrease"' %}
+                  {% include 'icon_increase', attr: 'role="increase"' %}
+                </spz-quantity>
+              </div>
+            {% when 'buy_buttons' %}
+              {% include 'product_info_atc', show_buy_btn: block.settings.show_buy_now, show_add_cart_btn: block.settings.show_add, show_paypal_btn: block.settings.show_paypal %}
+            {% when 'info' %}
+              {% include 'product_info_featured', show_sku: block.settings.show_sku, show_weight: block.settings.show_weight, show_barcode: block.settings.show_barcode, show_vendor: block.settings.show_vendor, show_inventory: block.settings.show_inventory %}
+            {% when 'sharing' %}
+              {% include 'product_info_share',share_facebook: block.settings.share_facebook, share_twitter: block.settings.share_twitter, share_pinterest: block.settings.share_pinterest %}
+            {% when 'sales_points' %} {% include 'product_info_sale' %}
+            {% when 'free_shipping' %} {% include 'product_info_free_shipping', item: block %}
+            {% when 'desc' %} {% include 'product_info_desc', item: block %}
+            {% when 'custom' %} {% include 'product_info_desc', item: block, page_id: block.settings.custom.id %}
+            {% when 'current_inventory' %} {% include 'product_info_current_inventory', item: block %}
+            {% when 'estimated_delivery_time' %} {% include 'product_info_delivery_time', item: block %}
+            {% when 'current_viewers' %} {% include 'product_info_current_viewer', item: block %}
+            {% else %}
+              {% if block.type contains 'shoplazza://apps' %}
+                {% render block %}
+              {% endif %}
+          {% endcase %}
+        {% endfor %}
+      </div>
+    {% endif %}
+    <div class="plugin__buy_on_others empty-hidden"></div>
+  </form>
+</spz-product-form>

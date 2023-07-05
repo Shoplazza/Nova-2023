@@ -1,0 +1,184 @@
+{% if product.options.size > 0 %}
+  {% assign product_swatches_name = settings.product_swatches_name | join: ',' | downcase | split: "," %} {% comment %} 兼容旧数据 string -> arr {% endcomment %}
+  {% assign thumb_swatch_name = nil %}
+  {% assign product_variant_style = settings.product_variant_style | default: 'button' %}
+  {% assign enable_selected_variants = settings.enable_selected_variants %}
+  {% capture borderRadius %}
+    {% if settings.button_edges == 'round' or settings.button_edges == 'slightly_round' %}
+      rounded-btn-fixed
+    {% else %}
+      rounded-[1px]
+    {% endif %}
+  {% endcapture %}
+  {% assign mouse_out_event = '' %}
+  {% assign mouse_over_event = '' %}
+  {% for opt in product.options %}
+    {% assign optName = opt.name | escape | replace: ' ', '-' %}
+    {% assign variant_name_render = 'product-info-selected-variant-' | append: optName | append: '.rerender(data=event);' %}
+    {% assign mouse_out_event = mouse_out_event | append: variant_name_render %}
+    {% assign mouse_over_event = mouse_over_event | append: '@' | append: optName | append: 'Mouseover="' | append: variant_name_render | append: '"' %}
+  {% endfor %}
+
+  <spz-variants
+    {% unless enable_selected_variants %}
+      disabled-default-value
+    {% endunless %}
+    class="product-info__variants flex flex-col items-start"
+    layout="container"
+    id="product-info-variants"
+    src="script:product-json"
+    switch-slide='{{ settings.product_image_change_names | json }}'
+    slide="product-main-images;"
+    manual
+    interference
+    interact="hover"
+    inherit-url-variant
+    @mouseout="{{mouse_out_event}}"
+    {{mouse_over_event}}
+    {{ block.shoplaza_attributes }}
+  >
+    {% for opt in product.options %}
+      {% assign optIdx = forloop.index | prepend: 'option' %}
+      {% assign optName = opt.name | downcase %}
+      {% if productSelectedVariant != nil and enable_selected_variants %}
+        {% assign selectedOptValue = productSelectedVariant[optIdx] %}
+      {% endif %}
+
+      {% comment %} 缩略图 {% endcomment %}
+      {% assign is_thumbnail = false %}
+      {% if product.need_variant_image and thumb_swatch_name == nil and settings.product_swatches_name contains optName %}
+        {% assign thumb_swatch_name = optName %}
+        {% assign is_thumbnail = true %}
+      {% endif %}
+
+      {%- comment -%} product_thumb_style {%- endcomment -%}
+      {% if product_variant_style == 'button' or is_thumbnail %}
+        <fieldset class="product-info__variants_content mt-6 lg:mt-8 mx-0" name="{{ opt.name }}">
+          <legend class="w-full">
+            <span class="lg:body-plus-2 leading-1.3 product-info__variants_title">{{ optName | capitalize | escape }}</span>
+            {% if product_variant_style == 'button' or is_thumbnail %}
+              <spz-render
+                class="inline-block opacity-60"
+                id="product-info-selected-variant-{{ opt.name | escape | replace: ' ', '-' }}"
+                layout="container"
+                manual
+              >
+                <span>
+                  {% if selectedOptValue %}
+                    : {{ selectedOptValue | escape }}
+                  {% endif %}
+                </span>
+                <template>
+                  ${function(){
+                    const optName = "{{ opt.name | escape }}";
+                    const optionValue = data.originData.selectData ? data.originData.selectData[optName].value : data.originData.value;
+                    const optionValueText = optionValue ? (': ' + optionValue) : '';
+                    return `
+                      <span>
+                        ${optionValueText}
+                      </span>
+                    `
+                  }()}
+                </template>
+              </spz-render>
+            {% endif %}
+          </legend>
+          <div class="flex flex-wrap {% unless is_thumbnail %} mt-1 {% endunless %} {% unless is_thumbnail %} product-info-variant-container {% endunless %}">
+            {% for value in opt.values %}
+              {% assign thumbnailImage = nil %}
+              {% for v in product.variants %}
+                {% if optIdx contains "option1" %}
+                  {% assign optValue = v.option1 %}
+                {% endif %}
+                {% if optIdx contains "option2" %}
+                  {% assign optValue = v.option2 %}
+                {% endif %}
+                {% if optIdx contains "option3" %}
+                  {% assign optValue = v.option3 %}
+                {% endif %}
+
+                {% if thumbnailImage == nil and optValue == value %}
+                  {% assign thumbnailImage = v.image %}
+                {% endif %}
+              {% endfor %}
+              <div class="relative mt-3 mr-3">
+                <input
+                  type="radio"
+                  option="{{ value | escape }}"
+                  id="product-info-variant-{{ value | escape }}-{{ forloop.index0 }}"
+                  class="pointer-events-auto"
+                  name="product-info-variant-{{opt.name}}"
+                  value="{{ value | escape }}"
+                  form="product-info-body"
+                  @input-debounced="product-info-selected-variant-{{ optName | escape | replace: ' ', '-' }}.rerender(data=event);"
+                  {% if value == selectedOptValue %}
+                  checked
+                  {% endif %}>
+                <label
+                  class="product-info-variant-option relative flex items-center break-words flex-shrink-0 overflow-hidden {{ borderRadius }}"
+                  data-type="{% if is_thumbnail %}{% if settings.product_thumb_style == 'image_with_text' %}image-with-text{% else %}image{% endif %}{% else %}text{% endif %}"
+                  >
+                  {% if is_thumbnail %}
+                    <spz-img
+                      class="{% if settings.product_thumb_style == 'image_with_text' %} ml-1 {% endif %}"
+                      src="{{ thumbnailImage.src | img_url }}"
+                      layout="responsive"
+                      width="42"
+                      height="42"
+                      alt="{{ thumbnailImage.alt }}"
+                      object-fit="cover"
+                      auto-fit></spz-img>
+                    {% if settings.product_thumb_style == 'image_with_text' %}
+                      <span class="break-words py-2 px-3">{{ value | escape }}</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="break-words py-3 px-4 text-center">{{ value | escape }}</span>
+                  {% endif %}
+                </label>
+              </div>
+            {% endfor %}
+          </div>
+        </fieldset>
+      {% else %}
+        <div class="mt-6 lg:mt-8 w-full">
+          <span class="lg:body-plus-2 leading-1.3 product-info__variants_title">{{ optName | capitalize | escape }}</span>
+        </div>
+        <div class="relative mt-3 inline-block lg:max-w-full">
+          <select
+            class="product-variant__select pointer-events-auto md:w-full lg:max-w-full text-text-font-size type-text-font-family {{ borderRadius }} secondary-select"
+            role="variant"
+            name="{{ opt.name }}"
+            value="{{ selectedOptValue }}"
+          >
+            {% unless enable_selected_variants %}
+              <option
+                value=""
+                id="product-info-variant-empty-option"
+                selected
+              ></option>
+            {% endunless %}
+            {% for value in opt.values %}
+              <option
+                class="product-info__variants_value"
+                value="{{ value | escape }}"
+                {% if value == selectedOptValue and enable_selected_variants %}
+                selected
+                {% endif %}>
+                {{ value | escape }}
+              </option>
+            {% endfor %}
+          </select>
+          {% include 'icon_arrow_right', icon_class: 'product-variant__select-icon' %}
+        </div>
+      {% endif %}
+      <spz-render id="{{opt.name | escape | replace: ' ', '-'}}-error-tip" manual layout="container">
+        <template>
+          ${function(){
+            const tipText = {{ 'i18n.product.product_detail.please_select_variant' | t | json }}.replace(/\{\{\s+name\s+\}\}/g, data);
+            return `<div class="product-info__variants-tips font-bold">${tipText}</div>`
+          }()}
+        </template>
+      </spz-render>
+    {% endfor %}
+  </spz-variants>
+{% endif %}

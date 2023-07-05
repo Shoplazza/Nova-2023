@@ -1,0 +1,77 @@
+{% stylesheet %}
+  .cart-content[data-empty][finish] ~ #cart-summary-render{
+    display: none;
+  }
+  .cart__checkout{
+    padding: 14px 50px;
+  }
+  .cart-invalid-msg{
+    color: #FF3F02;
+  }
+  .cart-summary-info{
+    max-width: 216px;
+  }
+  .cart__checkout-wrap{
+    flex-wrap: wrap;
+  }
+  .cart__checkout{
+    {% if shop.locale == "ar-SA" %}
+      margin-right: auto;
+    {% else %}
+      margin-left: auto;
+    {% endif %}
+  }
+  .plugin__bundle__cart__total-price{
+    word-break: break-word;
+  }
+  @media (max-width: 959.98px){
+    .cart-summary__desc,
+    .cart__checkout{
+      margin-top: 16px;
+    }
+  }
+{% endstylesheet %}
+<spz-render id="cart-summary-render" layout="container" manual>
+  <template>
+    <div class="cart-summary lg:ml-auto">
+      <div class="cart-summary-checkout">
+        {%- comment -%} cart free shipping {%- endcomment -%}
+        {% include 'cart_free_shipping' %}
+        {% comment %} discount {% endcomment %}
+        <div class="cart-summary__discount flex justify-between mt-4" spz-if="${data.total_discount>0}">
+          <span class="color-text-default md:text-sm leading-1.4">{{ 'i18n.bag.general.discount' | t }}</span>
+          <span class="notranslate flex text-base leading-1.2 lg:body-plus-2">
+            -<spz-currency layout="container" value="${data.total_discount}"></spz-currency>
+          </span>
+        </div>
+        {%- comment -%} plugin bundle {%- endcomment -%}
+        <div class="plugin__bundle__cart__save empty-hidden mt-4 text-sm"></div>
+        <div class="cart-invalid-msg-md mt-4" spz-if="${!!data.invalid_msg}">${data.invalid_msg}</div>
+        <div class="cart__checkout-wrap flex justify-between items-center">
+          <div class="cart-summary__desc mr-2 flex">
+            <span class="color-text-default leading-1.4 md:text-sm">
+              {{ 'i18n.bag.general.subtotal' | t }}<span class="semicolon mr-1">:</span>
+            </span>
+            <div class="flex flex-col items-end">
+              <spz-currency class="font-bold text-base lg:body-plus-2 leading-1.2" container-class="plugin__bundle__cart__total-price" layout="container" value="${data.total_price}"></spz-currency>
+              {% include 'tax_included', class: "mt-2 color-text-default" %}
+            </div>
+          </div>
+          <div class="cart-invalid-msg-lg mt-4 hidden" spz-if="${!!data.invalid_msg}">${data.invalid_msg}</div>
+          {%- comment -%} Checkout {%- endcomment -%}
+          <button
+            type="button"
+            class="cart__checkout button-primary flex-shrink-0 body-plus-2"
+            data-track="checkout-submit,click"
+            data-track-content="checkout"
+            data-track-source="checkout"
+            @tap="cart-content.checkout();"
+          >
+            {{ 'i18n.bag.general.check_out' | t }}
+          </button>
+        </div>
+      </div>
+      <div class="cart-summary-info color-text-default mt-3 text-right ml-auto">{{ 'i18n.bag.general.tax_shipping_info' | t }}</div>
+    </div>
+  </template>
+</spz-render>

@@ -1,0 +1,18 @@
+{% stylesheet %}
+  .cart-empty{
+    display: none;
+    padding-top: 80px;
+  }
+  .cart-content[data-empty][finish] ~ .cart-empty{
+    display: flex;
+  }
+  .cart-empty a{
+    padding: 14px 48px;
+  }
+{% endstylesheet %}
+<div class="cart-empty flex flex-col items-center">
+  {% include 'icon_empty_cart', icon_class: "cart-empty-icon" %}
+  {% include 'icon_cart_modal_empty', icon_class: "atc-modal-empty-icon hidden" %}
+  <p class="m-0 mt-1.5 text-sm">{{ 'i18n.bag.general.empty' | t }}</p>
+  <a class="button-primary mt-8 no-underline" href="{{ routes.root_url }}" data-track="cart-continue-shopping">{{ 'i18n.bag.general.continue_shopping' | t }}</a>
+</div>

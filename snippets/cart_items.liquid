@@ -1,0 +1,158 @@
+<style>
+  .cart-item{
+    border-bottom: var(--cart-border);
+  }
+  .cart-item__remove-btn{
+    width: 30px;
+    height: 30px;
+    border: var(--cart-border);
+    color: var(--color-body-text-9);
+  }
+  .cart-item__product__image{
+    width: 68px;
+  }
+  .cart-item__price{
+    word-break: break-word;
+  }
+  .cart-item__price.cart-item__price_discount{
+    color: var(--color-compare-at-price-text);
+    text-decoration-line: line-through;
+  }
+  .cart-item__discount_price{
+    color: var(--color-price-text);
+    margin-top: 1px;
+  }
+  .cart-item__qty spz-quantity{
+    width: 116px;
+    border: var(--cart-border);
+  }
+  .cart-item__qty .cart-item__discount_qty{
+    max-width: 116px;
+  }
+  .cart-item__qty spz-quantity .i-spzhtml-fill-content{
+    display: flex;
+  }
+  .cart-item__qty__number{
+    width: 38px;
+  }
+  .cart-item__qty__icon{
+    color: #888888;
+    width: 38px;
+    border: none !important;
+  }
+  .cart-item__qty__tip{
+    color: #FF3F02;
+  }
+  .cart-item__discount_applications {
+    color: #EB391B;
+  }
+  @media (min-width: 960px){
+    .cart-item__qty__icon:hover{
+      background-color: #f2f2f2;
+    }
+  }
+</style>
+
+{% capture titleAndVariant %}
+  <a
+    class="cart-item__product__title product-title-color block line-clamp-1 no-underline"
+    href="${item.product_url}"
+    data-track="click"
+    data-track-content="product_link"
+    data-track-product-id="${item.product_id}"
+    data-track-position="cart"
+  >
+    ${item.product_title}
+  </a>
+  <div class="cart-item__product__variant mt-0.5 break-words">
+    <p class="m-0">
+      ${item.options.map(option => option.value).join(' / ')}
+    </p>
+    <p class="m-0" spz-for="propertie in item.parsedProperties">
+      ${propertie.name} / ${propertie.isImage ? `<a class="no-underline text-inherit" href="${propertie.value}" target="_blank" >{{ 'i18n.bag.custom_metafield.view_image' | t }}</a>` : propertie.value}
+    </p>
+  </div>
+  {% include 'discount_gift_tag', gift_class: 'mt-1 lg:mt-2', gift_show: '${!!item.is_free_gift}' %}
+{% endcapture %}
+
+<div class="cart-item cart-item-header color-text-default hidden pb-3 pt-12">
+  <div class="cart-item__product">
+    {{ 'i18n.bag.general.product' | t }}
+  </div>
+  <div class="cart-item__qty-and-price flex justify-between items-center overflow-hidden">
+    <div class="cart-item__qty">{{ 'i18n.bag.general.qty' | t }}</div>
+    <div class="cart-item__price ml-2 lg:ml-4">{{ 'i18n.bag.general.price' | t }}</div>
+  </div>
+</div>
+
+<ul class="cart-items clear">
+  <li class="cart-item flex py-8" spz-for="item in data.line_items" id="${item.id}">
+    <div class="cart-item__product flex items-center">
+      {% comment %} item remove btn {% endcomment %}
+      <i class="cart-item__remove-btn flex justify-center items-center rounded-full cursor-pointer" @tap="cart-content.delete(id=${item.id})">{% include 'icon_close_small' %}</i>
+      {%- comment -%} item img {%- endcomment -%}
+      <a
+        class="cart-item__product__image block ml-4"
+        href="${item.product_url}?variant=${item.variant_id}"
+        data-track-type="image"
+        data-track-product_id="${item.variant_id}"
+        data-track="click"
+        data-track-content="product_link"
+        data-track-product-id="${item.product_id}"
+        data-track-position="cart"
+      >
+        <spz-img
+          class="rounded-global-fixed overflow-hidden"
+          width="${item.image.width}"
+          height="${item.image.height}"
+          layout="responsive"
+          src="${item.image.src}"
+          alt="${item.image.alt}"
+          object-fit="cover"
+          auto-fit
+        ></spz-img>
+      </a>
+      <div class="cart-item__product__text-lg hidden mr-4 ml-7">
+        {{titleAndVariant}}
+        {% comment %} <% if ( item.mixed_wholesale ) { %>
+          {% include 'mixed_wholesale_label', class: "mt-1 lg:mt-2" %}
+        <% } %> {% endcomment %}
+      </div>
+    </div>
+    <div class="cart-item__qty-and-price flex-1 flex flex-col ml-4 overflow-hidden">
+      <div class="cart-item__product__text-md pb-4">
+        {{titleAndVariant}}
+      </div>
+      <div class="flex justify-between items-center">
+        <div class="cart-item__qty flex-shrink-0">
+          <div class="cart-item__discount_qty break-words" spz-if="${!!item.disabled}">
+            *${item.quantity}
+          </div>
+          <spz-quantity
+            class="rounded-global"
+            spz-else
+            icon-class="cart-item__qty__icon clear flex items-center justify-center flex-shrink-0 h-full"
+            input-class="cart-item__qty__number clear flex-1 h-full text-center text-base"
+            name="quantity"
+            value="${item.quantity}"
+            min="1"
+            max="${item.available_quantity}"
+            height="38"
+            layout="flex-item"
+            @quantityChange="cart-content.update(value=event.value,id='${item.id}');"
+            @quantityChangeUnderflow="cart-content.delete(id='${item.id}');"
+          >
+            {% include 'icon_cart_minus', attr: 'role="decrease"' %}
+            {% include 'icon_cart_plus', attr: 'role="increase"' %}
+          </spz-quantity>
+          <div class="cart-item__qty__tip mt-1" spz-if="${!!item.item_text}">${item.item_text}</div>
+        </div>
+        <div class="flex flex-col items-end ml-2">
+          <spz-currency class="cart-item__price ${!!item.final_line_price && (item.final_line_price < item.line_price) ? 'cart-item__price_discount body-minus-2' : ''}" layout="container" value="${item.line_price}"></spz-currency>
+          <spz-currency class="cart-item__discount_price mt-0.5" spz-if="${!!item.final_line_price && item.final_line_price < item.line_price}" layout="container" value="${item.final_line_price}"></spz-currency>
+          {% include 'discount_applications', discount_class:'cart-item__discount_applications', discount_applications: 'item.discount_applications', alt: 'item.image.alt || item.product_title' %}
+        </div>
+      </div>
+    </div>
+  </li>
+</ul>

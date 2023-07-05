@@ -1,0 +1,190 @@
+{% assign count = search.results_count %}
+{% assign row_product = section.settings.row_product | default: 4 %}
+{% assign page_row = section.settings.page_row | default: 4 %}
+{% assign mobile_layout = section.settings.mobile_layout | default: 2 %}
+{% assign limit = row_product | times: page_row %}
+{% assign pagination_type = section.settings.pagination_type | default: 'number' %}
+{% include 'search_css' %}
+<div class="page-container search_container flex flex-col">
+  <h4 class="search_title lg:text-7">{{ 'i18n.search.search_products' | t }}</h4>
+  <form class="search-form mt-12 flex items-center justify-between" id="search-form" action="{{ routes.search_url }}" method="get" >
+    <div class="search-form-item relative flex-1 border">
+      <input class="search-form-input clear text-base w-full h-full" placeholder="{{ 'i18n.search.title' | t }}" id="search-form-input" type="text" name="q" value="{{ search.terms }}" maxlength="1024" @input-debounced="search-list.refresh(keyword=event.value);search_result_summary_sync.toggleClass(class='hidden',force=true);SPZ.replaceUrlState(q=event.value, reload=false);search-result-summary-empty.rerender(data=event.value);">
+    </div>
+    <button class="search-form-submit-btn flex-shrink-0 button-primary" type="submit">{{ 'i18n.search.search_button' | t }}</button>
+  </form>
+
+  <div class="search_total" id="search_result_summary_sync">
+    {% if count > 0 %}
+      <span>{{ 'i18n.search.items' | t: count: count }}</span>
+    {% elsif search.terms and count == 0 %}
+      <span>{{ 'i18n.search.no_results' | t: name: search.terms }}</span>
+    {% endif %}
+  </div>
+
+  <template id="search-list-template">
+    {% include 'product_snippet', source_id: 'search-list', product_id: '${data.id}' %}
+  </template>
+
+  <spz-list
+    class="search-list w-full md:mt-5"
+    id="search-list"
+    @dom-update="search-result-summary.rerender(data=event);search_result_summary_sync.toggleClass(class='hidden',force=true);"
+    layout="container"
+    page-size="{{limit}}"
+    total="data.total"
+    initial-page="0"
+    src="{{ '/api/search' | add_root_url }}?keyword={{ search.terms | escape | url_encode }}"
+    list="data.products"
+    track-event-name="search_list_change"
+    {% if pagination_type == 'scroll' %}infinite-scroll{% endif %}
+    manual
+    inherit-url-search='page'
+    initial-total="{{count}}"
+    template="search-list-template"
+    record-params-page-plus-one
+  >
+    {% paginate search.results.products by limit %}
+      {% for product in search.results.products %}
+        {% include 'product', card_product: product %}
+      {% endfor %}
+    {% endpaginate %}
+
+    {% if pagination_type == 'click' %}
+      <div class="pt-10 flex justify-center items-center search_click_btn" role="loadmore" {% if count <= limit %}hidden{% endif %}>
+        <button class="search_load_more button-secondary" type="button">{{ 'i18n.general.general.load_more' | t }}</button>
+      </div>
+    {% endif %}
+  </spz-list>
+
+  <spz-render id="search-result-summary" layout="container" manual>
+    <template>
+      <div class="search_total">
+        <span spz-if="${data.total > 0}">${({{ 'i18n.search.items' | t | json }}).replace(/\{\{\s*count\s*\}\}/, data.total)}</span>
+      </div>
+    </template>
+  </spz-render>
+
+  <spz-render id="search-result-summary-empty" layout="container" manual hidden>
+    <template>
+      <div class="search_total">
+        <span>${({{ 'i18n.search.no_results' | t | json }}).replace(/\{\{\s*name\s*\}\}/, data)}</span>
+      </div>
+    </template>
+  </spz-render>
+
+  {% if pagination_type == 'number' %}
+    {% include 'pagination_css' %}
+    <spz-pagination class="search-list-pagination w-full" list-id="search-list" layout="container" num-display-active="1">
+      {% include 'icon_chevron_up', attr: 'role="arrow"' %}
+    </spz-pagination>
+  {% endif %}
+</div>
+{% schema %}
+{
+  "name": "search",
+  "templates": ["search"],
+  "limit": 1,
+  "settings": [
+    {
+      "type": "select",
+      "id": "mobile_layout",
+      "label": {
+        "en-US": "Mobile product layout",
+        "zh-CN": "移动端商品布局"
+      },
+      "default": 2,
+      "options": [
+        {
+          "value": 1,
+          "label": {
+            "en-US": "Large grid",
+            "zh-CN": "一栏"
+          }
+        },
+        {
+          "value": 2,
+          "label": {
+            "en-US": "Small grid",
+            "zh-CN": "两栏"
+          }
+        }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "row_product",
+      "step": 1,
+      "max": 6,
+      "min": 2,
+      "label": {
+        "en-US": "Desktop products per row",
+        "zh-CN": "PC端每行商品数量"
+      },
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "page_row",
+      "step": 1,
+      "max": 20,
+      "min": 3,
+      "label": {
+        "en-US": "Rows per page",
+        "zh-CN": "每页商品行数"
+      },
+      "default": 4
+    },
+    {
+      "type": "select",
+      "id": "pagination_type",
+      "label": {
+        "en-US": "Pagination",
+        "zh-CN": "分页"
+      },
+      "default": "number",
+      "options": [
+        {
+          "value": "number",
+          "label": {
+            "en-US": "Number",
+            "zh-CN": "数字分页"
+          }
+        },
+        {
+          "value": "scroll",
+          "label": {
+            "en-US": "Scroll loading",
+            "zh-CN": "滚动加载"
+          }
+        },
+        {
+          "value": "click",
+          "label": {
+            "en-US": "Click loading",
+            "zh-CN": "点击加载"
+          }
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "search",
+      "cname": {
+        "en-US": "Search results",
+        "zh-CN": "搜索结果"
+      },
+      "category": {
+        "en-US": "Page",
+        "zh-CN": "页面"
+      },
+      "ccategory": {
+        "en-US": "Page",
+        "zh-CN": "页面"
+      },
+      "display": true
+    }
+  ]
+}
+{% endschema %}

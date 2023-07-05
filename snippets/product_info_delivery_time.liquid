@@ -1,0 +1,29 @@
+{%- comment -%} 预计投递时间 {%- endcomment -%}
+{% assign minimum_days = item.settings.minimum_days %}
+{% assign maximum_days = item.settings.maximum_days %}
+{% assign custom_text = item.settings.custom_text %}
+
+{% if minimum_days and maximum_days and minimum_days >= 0 and maximum_days >= 0 and minimum_days < maximum_days %}
+  <spz-render id="product-info-delivery-time-render" layout="container" {{ block.shoplaza_attributes }}>
+    <template>
+      ${function() {
+        const minDays = parseInt('{{ minimum_days | default: 0 }}');
+        const maxDays = parseInt('{{ maximum_days | default: 0 }}');
+        const customText = {{ custom_text | json }};
+        const minDate = new Date(Date.now() + (minDays * 86400000));
+        const maxDate = new Date(Date.now() + (maxDays * 86400000));
+        const formatDate = (minDate.getFullYear() == maxDate.getFullYear() && minDate.getFullYear() == new Date().getFullYear())
+        ? new Intl.DateTimeFormat('en', { month: 'short', day: '2-digit' })
+        : new Intl.DateTimeFormat('en', { month: 'short', day: '2-digit', year: 'numeric' });
+        const tipText = customText.replace(/\{min_date\}/g, '<b>' + formatDate.format(minDate) + '</b>')
+          .replace(/\{max_date\}/g, '<b>' + formatDate.format(maxDate) + '</b>');
+        return `
+          <div class="product-info_delivery-time flex items-center mt-8">
+            {% include 'icon_delivery_time', icon_class: "flex-shrink-0" %}
+            <span class="product-info_delivery-time-text ml-2 break-all body-plus-2">${tipText}</span>
+          </div>
+        `;
+      }()}
+    </template>
+  </spz-render>
+{% endif %}

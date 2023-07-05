@@ -1,0 +1,201 @@
+{% assign force_image_size = section.settings.img_size %}
+{% assign mobile_gallery_layout = section.settings.mobile_gallery_layout %}
+{% assign enable_selected_variants = settings.enable_selected_variants %}
+{% assign image_size = product.images.size %}
+{% assign initialSlideIndex = nil %}
+{% assign firstImgIndex = nil %}
+{% assign firstVideoIndex = nil %}
+
+{% for item in product.images %}
+  {% assign media = item.src | media_parse %}
+  {% if media.mp4 or media.hls %}
+    {% assign firstVideoIndex = forloop.index0 %}
+  {% else %}
+    {% if firstImgIndex == nil %}
+      {% assign firstImgIndex = forloop.index0 %}
+    {% endif %}
+  {% endif %}
+  {% if productSelectedVariant.image.src == item.src and initialSlideIndex == nil and enable_selected_variants %}
+    {% assign initialSlideIndex = forloop.index0 %}
+  {% endif %}
+  {% if initialSlideIndex != nil and firstVideoIndex != nil and firstImgIndex != nil %}
+    {% break %}
+  {% endif %}
+{% endfor %}
+
+{% assign initialSlideIndex = initialSlideIndex | default: 0 %}
+
+<div class="product-images flex-shrink-0 {% if section.settings.size == 'large' %} product-images-large {% endif %}">
+  <div class="flex md:flex-col lg:justify-between" id="product-images-inner-container">
+    {% if image_size > 1 %}
+      <div class="product-thumb-images-container relative flex-shrink-0 lg:mr-5 md:order-1 {% unless section.settings.show_thumb_mb %}md:hidden{% endunless %}" id="product-thumb-images-container" data-type="{{ gallery_style }}">
+        <spz-selector
+          class="hide-scrollbar"
+          id="product-thumb-images"
+          @select="product-main-images.goToSlide(index=event.targetOption, animate=true);"
+          layout="container"
+        >
+          <div scroll-container class="flex lg:flex-col">
+            {% for item in product.images %}
+              <div class="product-thumb-img relative md:flex-shrink-0 flex items-center justify-center overflow-hidden text-0" option="{{ forloop.index0 }}">
+                <spz-img
+                  class="cursor-pointer"
+                  layout="fixed"
+                  width="84"
+                  height="84"
+                  src="{{ item.src | img_url: '180x'  }}"
+                  alt="{{ item.alt | escape }}"
+                  object-fit="cover"
+                ></spz-img>
+                {% assign media = item.src | media_parse %}
+                {% if media.mp4 or media.hls %}
+                  {% include 'icon_video_play_large', icon_class: 'product-thumb-img-play-icon absolute' %}
+                {% elsif media.media_type == 'model3d' %}
+                  <span class="product-thumb-3d-img flex items-center justify-center absolute inset-0 z-10">
+                    {% include 'icon_model_enter_small' %}
+                  </span>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </spz-selector>
+        {% if image_size > 1 %}
+          <spz-render class="pointer-events-none md:hidden" id="product-thumb-buttons" layout="container" manual>
+            <template>
+              <div class="absolute inset-0">
+                <div class="product-thumb-btn-top product-thumb-btn flex ${data.index == 0 ? 'hidden' : ''}" data-type="prev" @tap="product-main-images.goToSlide(index=${data.index - 1});">{% include 'icon_arrow_right' %}</div>
+                <div class="product-thumb-btn-bottom product-thumb-btn flex ${data.index + 1 == {{ image_size }} ? 'hidden' : ''}" data-type="next" @tap="product-main-images.goToSlide(index=${data.index + 1});">{% include 'icon_arrow_right' %}</div>
+              </div>
+            </template>
+          </spz-render>
+        {% endif %}
+      </div>
+    {% endif %}
+    <div class="product-main-images-container relative lg:flex-1 lg:order-10">
+      {%- comment -%} PC Images {%- endcomment -%}
+      <div class="product-main-images relative">
+        <spz-carousel
+          id="product-main-images"
+          {% unless section.settings.md_arrows_on %}
+            mdArrowsHide
+          {% endunless %}
+          zoom
+          slidezoom
+          {% if image_size > 1 %}
+            loop
+            data-lot-image
+            controls
+          {% endif %}
+          effect="scroller"
+          @slideChange="product-thumb-buttons.rerender(data=event);product-images-index.rerender(data=event);product-thumb-images.toggle(option=event.index, value=true, isScrollIntoView=true);"
+          @mounted="product-images-index.rerender(data=event);product-thumb-images.toggle(option=event.index, value=true, isScrollIntoView=true);product-thumb-buttons.rerender(data=event);"
+          visible-count="(min-width: 960px) 1, 1.5"
+          data-layout="{{ mobile_gallery_layout }}"
+          layout="container"
+          initial-slide="{{ initialSlideIndex }}"
+          class="product_main_images_carousel {% if image_size > 1 %}has_images{% endif %}"
+        >
+          {% for item in product.images %}
+            {% assign media = item.src | media_parse %}
+            {% if media.mp4 or media.hls %}
+              <spz-video
+                class="relative flex items-center justify-center rounded-xl overflow-hidden"
+                hls="{{ media.hls }}"
+                mp4="{{ media.mp4 }}"
+                width="{{ item.width }}"
+                height="{{ item.height }}"
+                layout="responsive"
+                poster="{{ media.preview_image }}"
+                data-size="{{ force_image_size }}"
+                object-fit="contain"
+              >
+                {% include 'icon_video_play_large' %}
+                <span role="play" class="hidden"></span>
+              </spz-video>
+            {% elsif media.media_type == 'model3d' %}
+              <div class="product-model-viewer-container">
+                <spz-model-viewer
+                  id="product-model-viewer-{{ section.id }}-{{ forloop.index0 }}"
+                  style="--poster-color: transparent;"
+                  class="hidden"
+                  layout="container"
+                  src="{{ media.sources }}"
+                  alt="{{ item.alt | escape }}"
+                  poster="{{ item.src | img_url }}"
+                  data-js-focus-visible
+                  ar-status="not-presenting"
+                  tabindex="-1"
+                  ar-modes="webxr scene-viewer quick-look"
+                  @tap="product-main-images.goToSlide(index={{ forloop.index0 }});"
+                ></spz-model-viewer>
+                <div
+                  class="model-viewer-enter-container relative h-full"
+                  @tap="product-main-images.goToSlide(index={{ forloop.index0 }});product-model-viewer-{{ section.id }}-{{ forloop.index0 }}.toggleClass(class='hidden', force=false);product-model-viewer-{{ section.id }}-{{ forloop.index0 }}.enter;">
+                  <spz-img layout="responsive" height="375" width="375" src="{{ item.src | img_url }}" object-fit="contain" auto-fit></spz-img>
+                  <i class="product-model-viewer-icon">
+                    {% include 'icon_model_enter' %}
+                  </i>
+                </div>
+              </div>
+            {% else %}
+              {% capture product_image_lcp %}
+                {% if forloop.index == 1 %}
+                  <img
+                    class="product_image_lcp"
+                    src="{{ item.src | img_url: '1080x' }}"
+                    alt="{{ item.alt | escape }}"
+                  >
+                {% endif %}
+              {% endcapture %}
+              <div class="relative h-full" {% if forloop.index == 1 %}lcp{% endif %}>
+                {% if section.settings.zoom_on %}
+                  <spz-zoom class="h-full md:hidden" zoom-ratio="3.5" layout="container">
+                    <spz-img
+                      class="overflow-hidden w-full"
+                      layout="responsive"
+                      width="{{ item.width }}"
+                      height="{{ item.height }}"
+                      src="{{ item.src | img_url: '1080x' }}"
+                      alt="{{ item.alt | escape }}"
+                      object-fit="contain"
+                      data-size="{{ force_image_size }}"
+                    >
+                      {{product_image_lcp}}
+                    </spz-img>
+                  </spz-zoom>
+                {% endif %}
+                <spz-img
+                  class="non-zoom-image overflow-hidden w-full {% if section.settings.zoom_on %} lg:hidden {% endif %}"
+                  layout="responsive"
+                  width="{{ item.width }}"
+                  height="{{ item.height }}"
+                  src="{{ item.src | img_url: '1080x' }}"
+                  alt="{{ item.alt | escape }}"
+                  object-fit="contain"
+                  data-size="{{ force_image_size }}"
+                >
+                  {{product_image_lcp}}
+                </spz-img>
+                <spz-zoom class="zoom-in-image md:hidden h-full" zoom-ratio="3.5" layout="container" interact="click">
+                  <spz-img layout="responsive" width="{{ item.width }}" height="{{ item.height }}" src="{{ item | img_url }}" alt="{{ item.alt | escape }}" object-fit="contain"></spz-img>
+                </spz-zoom>
+              </div>
+            {% endif %}
+          {% endfor %}
+          {% if image_size > 1 %}
+            {% include 'icon_arrow_right', attr: 'pre hidden' %}
+            {% include 'icon_arrow_right', attr: 'next hidden' %}
+          {% endif %}
+        </spz-carousel>
+
+        {% if image_size > 1 %}
+          <spz-render class="pointer-events-none" id="product-images-index" layout="container" manual>
+            <template>
+              <div class="product-info-images-bar rounded-full pointer-events-none text-xs">${data.index + 1}/{{ image_size }}</div>
+            </template>
+          </spz-render>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>

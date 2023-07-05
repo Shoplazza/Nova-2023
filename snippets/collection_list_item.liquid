@@ -1,0 +1,42 @@
+{% assign collection = collections[block.settings.collection.id] %}
+{% assign image = block.settings.image %}
+{% assign alt = '' %}
+{% if image %}
+  {% assign alt = images[image].alt %}
+{% else %}
+  {% if collection.image %}
+    {% assign image = collection.image %}
+  {% else %}
+    {% assign product0 = collection.products[0] %}
+    {% assign image = product0.image %}
+  {% endif %}
+  {% assign alt = image.alt %}
+{% endif %}
+{% assign title = block.settings.title | default: collection.title %}
+<a
+  {{ block.shoplaza_attributes }}
+  class="collection_list_item block {% if {{layout}} == 'grid' %} px-2 {% else %} {% if forloop.index > {{desktop_per_row}} %} {% endif %} {% if block_size > 1 %} md:w-[206px] {% endif %} md:pr-4 {% endif %} pt-4 overflow-hidden text-inherit no-underline lg:px-3 lg:pt-6"
+  {% include 'link', link: collection %}>
+  <div class="pb-2">
+    <div class="{% if tile_style == 'circle' %} p-6 rounded-full overflow-hidden {% else %} p-[15px] {% endif %} lg:p-8 lg:transition-shadow lg:duration-[250ms] lg:hover:shadow-image" style="background-color: {{ image_bg }};padding: {{ collection_grid_image_margin }}%;">
+      <div class="relative" style="{% unless image %} padding-bottom: {{ image_ratio }}; {% endunless %}">
+        {% if image %}
+          <spz-img
+            class=""
+            src='{{ image | img_url }}'
+            alt='{{ alt | default: title | escape }}'
+            layout="responsive"
+            width="375"
+            height="375"
+            object-fit="contain"
+            auto-fit></spz-img>
+        {% else %}
+          {{ 'product-1' | placeholder_svg_tag: 'absolute inset-0 w-full h-full fill-svg bg-svg' }}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% if title %}
+    <p class="m-0 body-minus-1 text-center lg:body-plus-1">{{ title }}</p>
+  {% endif %}
+</a>

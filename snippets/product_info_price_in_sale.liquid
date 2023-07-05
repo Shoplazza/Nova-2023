@@ -1,0 +1,12 @@
+<div class="flex flex-wrap item-center justify-between color-compare-price mt-3">
+  {% if shop.wholesale_enabled %}
+    {% assign retail_price = product.retail_price_max | default: product.compare_at_price_max %}
+    {% if productSelectedVariant %}
+      {% assign retail_price = productSelectedVariant.retail_price | default: productSelectedVariant.compare_at_price %}
+    {% endif %}
+    <div class="{% if retail_price <= 0 %} hidden {% endif %}">{{ 'i18n.products.general.retail' | t }}&nbsp<span class="money">{{ retail_price | money_with_symbol }}</span></div>
+  {% endif %}
+  {% if product.sales > 0 %}
+    <div>{{ 'i18n.product.product_detail.sold' | t: count: product.sales }}</div>
+  {% endif %}
+</div>

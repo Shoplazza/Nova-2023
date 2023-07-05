@@ -1,0 +1,86 @@
+{% if settings.cart_style == 'drawer' and template.name != 'cart' %}
+  <style>
+    .atc-modal{
+      --cart-border: 1px solid rgba(230, 230, 230, 0.6);
+      --padding-x: 24px;
+      width: 100%;
+      max-width: 100% !important;
+      top: 0;
+      bottom: 0;
+      background: var(--color-body-bg);
+    }
+    .atc-modal__header{
+      position: sticky;
+      top: 0;
+      border-bottom: var(--cart-border);
+      background: var(--color-body-bg);
+      font-size: 22px;
+      z-index: 1;
+    }
+    .atc-modal-close{
+      padding: 10px;
+      background: rgba(230, 230, 230, 0.35);
+    }
+    .cart-content[data-empty][finish],
+    .atc-modal .cart-empty-icon{
+      display: none;
+    }
+    .atc-modal .atc-modal-empty-icon{
+      display: block;
+    }
+    @media (min-width: 960px){
+      .atc-modal{
+        width: 440px;
+      }
+      .atc-modal .cart-item__product__image{
+        width: 80px;
+      }
+    }
+    .atc-modal .cart-countdown{
+      margin-top: 0;
+    }
+    .atc-modal .cart-items{
+      padding: 0 var(--padding-x);
+    }
+    .atc-modal .cart-item__product__title{
+      font-size: calc(var(--type-text-font-size) - 2px);
+    }
+    .atc-modal #cart-summary-render{
+      padding: 6px var(--padding-x) 20px;
+      border-top: var(--cart-border);
+      height: auto !important;
+    }
+    .atc-modal .cart-summary__desc,
+    .atc-modal .cart__checkout{
+      margin-top: 16px;
+    }
+  </style>
+  {% include 'cart_countdown_template' %}
+  <spz-event target-id="cart-content" target-api="render" event-name="dj.addToCart" layout="logic"></spz-event>
+  <spz-sidebar id="atc-modal" class="atc-modal atc-modal__content flex flex-col" layout="nodisplay" side="right">
+    <div class="atc-modal__header flex justify-between items-center py-4 lg:py-5 px-4 lg:px-6">
+      <div class="title-color type-heading-font-family leading-none">{{ 'i18n.bag.general.cart' | t }}</div>
+      <i class="atc-modal-close flex rounded-full cursor-pointer" @tap="atc-modal.close();">{% include 'icon_cart_modal_close' %}</i>
+    </div>
+    <spz-cart
+      id="cart-content"
+      class="cart-content flex-1"
+      layout="container"
+      summary-id="#cart-summary-render"
+      empty-item="cart.line_items"
+    >
+      <template>
+        <div spz-if="${!!data.item_count}">
+          {% comment %} cart countdown {% endcomment %}
+          {% include 'cart_countdown' %}
+          {% comment %} cart list {% endcomment %}
+          {% include 'cart_items' %}
+        </div>
+      </template>
+    </spz-cart>
+    {% comment %} cart summary {% endcomment %}
+    {% include 'cart_summary' %}
+    {% comment %} empty {% endcomment %}
+    {% include 'cart_empty' %}
+  </spz-sidebar>
+{% endif %}

@@ -1,0 +1,176 @@
+{% stylesheet %}
+  .main-content {
+    padding-bottom: 32px;
+  }
+  @media (min-width: 960px) {
+    .main-content {
+      padding-bottom: 66px;
+    }
+  }
+  #cart{
+    --cart-border: 1px solid rgba(230, 230, 230, 0.6);
+  }
+  .cart-title{
+    font-size: 26px;
+    padding-top: 76px;
+  }
+  .cart-content[data-empty][finish]{
+    display: none;
+  }
+  {% comment %} loading {% endcomment %}
+  .cart-content[loading] ~ .loading, .cart-content[interact-loading] ~ .loading{
+    display: var(--loading-show);
+  }
+  {% comment %} cart-item start {% endcomment %}
+  @media (min-width: 960px){
+    .cart-section .cart-item-header{
+      display: flex;
+    }
+    .cart-section .cart-item__product{
+      width: 70%;
+    }
+    .cart-section .cart-item__product__image{
+      width: 78px;
+      {% if shop.locale == "ar-SA" %}
+        margin-right: 40px;
+      {% else %}
+        margin-left: 40px;
+      {% endif %}
+    }
+    .cart-section .cart-item__product__text-md{
+      display: none;
+    }
+    .cart-section .cart-item__product__text-lg{
+      display: block;
+      max-width: 380px;
+    }
+    .cart-section .cart-item__product__variant{
+      margin-top: 8px;
+    }
+    .cart-section .cart-item__qty-and-price{
+      width: 30%;
+      {% if shop.locale == "ar-SA" %}
+        margin-right: 0;
+      {% else %}
+        margin-left: 0;
+      {% endif %}
+    }
+    .cart-section .cart-item__qty-and-price:not(.justify-between){
+      justify-content: center;
+    }
+    .cart-section .cart-item__price{
+      {% if shop.locale == "ar-SA" %}
+        margin-right: 16px;
+      {% else %}
+        margin-left: 16px;
+      {% endif %}
+    }
+  }
+  {% comment %} cart-item end {% endcomment %}
+  {% comment %} cart-summary start {% endcomment %}
+  .cart-section .cart-summary{
+    margin-top: 24px;
+  }
+  @media (min-width: 960px){
+    .cart-section .cart-summary{
+      width: 30%;
+    }
+    .cart-section .cart-summary__discount,
+    .cart-section .plugin__bundle__cart__save{
+      margin-top: 20px;
+    }
+    .cart-section .cart-summary__desc{
+      justify-content: space-between;
+      padding-bottom: 24px;
+      margin-top: 24px;
+      {% if shop.locale == "ar-SA" %}
+        margin-left: 0;
+      {% else %}
+        margin-right: 0;
+      {% endif %}
+      border-bottom: var(--cart-border);
+    }
+    .cart-section .cart-summary-info{
+      max-width: unset;
+    }
+    .cart-section .cart-invalid-msg-md,
+    .cart-section .semicolon{
+      display: none;
+    }
+    .cart-section .cart-invalid-msg-lg{
+      display: block;
+    }
+    .cart-section .cart__checkout-wrap{
+      display: block;
+      margin-top: 0;
+    }
+    .cart-section .cart__checkout{
+      width: 100%;
+      margin-top: 28px;
+    }
+  }
+  {% comment %} cart-summary end {% endcomment %}
+{% endstylesheet %}
+
+{% include 'cart_countdown_template' %}
+<spz-event target-id="cart-content" target-api="render" event-name="dj.addToCart" layout="logic"></spz-event>
+<div id="cart" class="cart-section page-container">
+  {%- comment -%} plugin {%- endcomment -%}
+  <div class="cart__discount-container pt-10 lg:pt-15 empty-hidden"></div>
+  <spz-cart
+    id="cart-content"
+    class="cart-content"
+    layout="container"
+    summary-id="#cart-summary-render"
+    empty-item="cart.line_items"
+    {% comment %} toast {% endcomment %}
+    @cartIncrease='theme-toast-success.showToast(content={{ "i18n.bag.general.increased_success" | t | json }})'
+    @cartDecrease='theme-toast-success.showToast(content={{ "i18n.bag.general.decreased_success" | t | json }})'
+  >
+    <template>
+      <div spz-if="${!!data.item_count}">
+        <h4 class="cart-title md:hidden m-0 type-heading-font-family title-color leading-1.1">{{ 'i18n.bag.general.cart' | t }}</h4>
+        {% comment %} cart countdown {% endcomment %}
+        {% include 'cart_countdown' %}
+        {% comment %} cart list {% endcomment %}
+        {% include 'cart_items' %}
+      </div>
+    </template>
+  </spz-cart>
+  {% comment %} cart summary {% endcomment %}
+  {% include 'cart_summary' %}
+  {% comment %} empty {% endcomment %}
+  {% include 'cart_empty' %}
+  {% comment %} loading {% endcomment %}
+  {% include 'loading', display: false, has_full_mask: true %}
+</div>
+
+{% schema %}
+  {
+    "name": "cart",
+    "templates": ["cart"],
+    "limit": 1,
+    "max_blocks": 1,
+    "settings": [],
+    "blocks": [],
+    "presets": [
+      {
+        "name": "cart",
+        "cname": {
+          "zh-CN": "购物车",
+          "en-US": "Cart"
+        },
+        "category": {
+          "en-US": "Page",
+          "zh-CN": "页面"
+        },
+        "ccategory": {
+          "en-US": "Page",
+          "zh-CN": "页面"
+        },
+        "display": true,
+        "blocks": []
+      }
+    ]
+  }
+{% endschema %}

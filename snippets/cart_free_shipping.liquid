@@ -1,0 +1,53 @@
+{% if settings.free_shipping_tip and settings.postage_free_amount > 0 %}
+  {% stylesheet %}
+    .cart_free_shipping_discount_color{
+      color: #FF7B56;
+    }
+    .cart_free_shipping__progress_bar_wrap{
+      height: 6px;
+      background: rgba(230, 230, 230, 0.5);
+    }
+    .cart_free_shipping__progress_bar {
+      background: linear-gradient(90deg, #FF9638 0%, #FF7B56 100%);
+      transition: all 1s;
+    }
+    @media (max-width: 959.98px) {
+      .cart_free_shipping__progress {
+        border-bottom: var(--cart-border);
+      }
+    }
+  {% endstylesheet %}
+
+  ${(function(){
+    var total_price = data.total_price;
+    var postageFreeAmount = {{ settings.postage_free_amount | minus: 0 }};
+    var freeAmount = (postageFreeAmount - total_price).toFixed(2);
+    var isFreeShipping = freeAmount <= 0;
+    var rate = Math.min(total_price / postageFreeAmount * 100, 100).toFixed(2);
+    var freeShoppingTips = {{ 'i18n.bag.general.enjoy_free_shopping' | t | json }}.replace('{% raw %}{{ amount }}{% endraw %}', `<spz-currency class="cart_free_shipping_discount_color inline-block" layout="container" value="${freeAmount}"></spz-currency>`);
+
+    return `
+      <div class="cart_free_shipping mb-6">
+        <div class="flex justify-between mt-4 mb-4 lg:mb-5" spz-if="${isFreeShipping}">
+          <span class="color-text-default md:text-sm leading-1.4">{{ 'i18n.bag.general.shipping' | t }}</span>
+          <span class="text-base leading-1.2 lg:body-plus-2">{{ 'i18n.bag.general.free' | t }}</span>
+        </div>
+        <div spz-if="${!isFreeShipping}">
+          <div class="flex items-center mt-3">
+            {% include 'icon_shipping' %}
+            <div class="cart_free_shipping__desc ml-2 text-sm leading-1.3 text-color-8 font-bold">
+              ${freeShoppingTips}
+            </div>
+          </div>
+          {%- comment -%} Progress bar {%- endcomment -%}
+          <div class="cart_free_shipping__progress flex items-center mt-1.5 md:pb-6">
+            <div class="cart_free_shipping__progress_bar_wrap flex-1 relative rounded-full">
+              <div class="cart_free_shipping__progress_bar absolute h-full rounded-full" style="width:${rate}%;"></div>
+            </div>
+            <span class="flex-shrink-0 ml-2 text-sm tw-leading-1.3 font-bold cart_free_shipping_discount_color">${rate}%</span>
+          </div>
+        </div>
+      </div>
+    `
+  })()}
+{% endif %}

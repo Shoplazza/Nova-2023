@@ -1,0 +1,355 @@
+{% assign pc_columns = section.settings.pc_columns %}
+{% assign rows = section.settings.rows %}
+{% assign mobile_rows = section.settings.mobile_rows %}
+{% assign columns_mobile = section.settings.columns_mobile %}
+{% assign block_size = section.blocks.size %}
+{% include 'card_spacing_css' %}
+<style>
+  [data-section-id="{{ section.id }}"] .product-tab-item {
+    font-size: calc(var(--type-heading-font-size) * 0.8);
+    color: var(--color-general-heading-text);
+    line-height: 44px;
+    margin-right: 180px;
+  }
+
+  [data-section-id="{{ section.id }}"] .product_tab-arrows-item {
+    width: 44px;
+    height: 44px;
+    background-color: var(--color-body-bg);
+    border: 1px solid #e6e6e6;
+  }
+
+  @media (min-width: 960px){
+    [data-section-id="{{ section.id }}"] .product-tab-item {
+      font-size: calc(var(--type-heading-font-size) * 0.67);
+      margin-right: 0;
+      padding-bottom: 14px;
+    }
+
+    [data-section-id="{{ section.id }}"] .product-tab-item[active] {
+      font-size: calc(var(--type-heading-font-size) * 0.8);
+      opacity: 1;
+      border-bottom: 2px solid var(--color-body-text);
+    }
+
+    [data-section-id="{{ section.id }}"] .product-tab-item:nth-child(n + 2) {
+      margin-left: 36px;
+    }
+  }
+</style>
+
+{%- comment -%} 阿拉伯语言支持 {%- endcomment -%}
+{% if shop.locale == "ar-SA" %}
+  <style>
+    html[dir="rtl"] [data-section-id="{{ section.id }}"] .product-tab-item {
+      margin-right: 0;
+      margin-left: 180px;
+    }
+    html[dir="rtl"] [data-section-id="{{ section.id }}"] .product__tab-more-icon {
+      transform: rotate(180deg);
+    }
+
+    @media (min-width: 960px){
+      html[dir="rtl"] [data-section-id="{{ section.id }}"] .product-tab-item {
+        margin-left: 0;
+      }
+
+      html[dir="rtl"] [data-section-id="{{ section.id }}"] .product-tab-item:nth-child(n + 2) {
+        margin-left: 0px;
+        margin-right: 36px;
+      }
+    }
+  </style>
+{% endif %}
+
+<spz-tabs class="page-container mx-auto md:hidden" layout="container">
+  <div class="product-tab-header flex">
+    <ul class="product-tabs-content flex items-center m-0 type-heading-font-family m-0 p-0" role="tabs">
+      {% for item in section.blocks %}
+        {% assign collection = collections[item.settings.collection.id] %}
+        {% assign heading = item.settings.title | default: collection.title %}
+        {% if collection.id or item.settings.title %}
+          <li class="product-tab-item clear opacity-75 cursor-pointer" role="tab" data-panel="Tab-{{ forloop.index }}-{{ section.id }}" {% if forloop.index == 1 %} active {% endif %} {{item.shoplaza_attributes}}>
+            {{ heading | escape }}
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </div>
+
+  {% for item in section.blocks %}
+    {% assign collection = collections[item.settings.collection.id] %}
+    {% unless collection.id %}
+      {% assign collection =  default_collection %}
+    {% endunless %}
+    {% assign product_counts = pc_columns | times: rows %}
+    {% assign collection_size = collection.products_count %}
+    {% if collection_size <= product_counts %}
+      {% assign product_counts = collection_size %}
+    {% endif %}
+    <div class="product-tab-container flex flex-col" data-id="Tab-{{ forloop.index }}-{{ section.id }}" role="tabpanel" {% if forloop.index == 1 %} active {% endif %} {{item.shoplaza_attributes}}>
+      <div class="grid grid-cols-{{ pc_columns }} gap-x-10 gap-y-11 mt-7">
+        {% for product in collection.products limit: product_counts %}
+          {% include 'product', card_product: product %}
+        {% endfor %}
+      </div>
+      {% if section.settings.button_on %}
+        <a class="flex justify-center items-center color-body no-underline cursor-pointer mt-8 mx-auto" {% include 'link', link: collection %}>
+          <span class="body-plus-2 cursor-pointer leading-1.5">{{ 'i18n.general.view.view_more' | t }}</span>
+          {% include "icon_arrow_tip_right", icon_class: 'product__tab-more-icon flex items-center ml-1' %}
+        </a>
+      {% endif %}
+    </div>
+  {% endfor %}
+</spz-tabs>
+<div class="relative page-container">
+  <spz-carousel
+    class="lg:hidden"
+    {% if block_size > 1 %}
+      loop
+    {% endif %}
+    id="product-tabs-md-{{ section.id }}"
+    controls layout="container"
+    effect="scroller"
+    initial-slide="0"
+    advance-count="1"
+    @mounted="product-tabs-md-render-{{ section.id }}.rerender(data=event);"
+    @slideChange="product-tabs-md-render-{{ section.id }}.rerender(data=event);"
+  >
+    {% for item in section.blocks %}
+      {% assign product_counts_mobile = columns_mobile | times: mobile_rows %}
+      {% assign collection = collections[item.settings.collection.id] %}
+      {% unless collection.id %}
+        {% assign collection = default_collection %}
+      {% endunless %}
+      {% assign heading = item.settings.title | default: collection.title %}
+      {% assign collection_size = collection.products_count %}
+      {% if collection_size <= product_counts_mobile %}
+        {% assign product_counts_mobile = collection_size %}
+      {% endif %}
+      <div class="product-tab-container flex flex-col" {{item.shoplaza_attributes}}>
+        <h4 class="product-tab-item mr-5 clear break-words font-normal">
+          {{ heading | escape }}
+        </h4>
+        <div class="grid grid-cols-{{ columns_mobile }} gap-x-4 gap-y-6 mt-5">
+          {% for product in collection.products limit: product_counts_mobile %}
+            {% include 'product', card_product: product, label_type: 'md' %}
+          {% endfor %}
+        </div>
+        {% if section.settings.button_on %}
+          <a class="flex justify-center items-center color-body no-underline cursor-pointer mt-8 mx-auto" {% include 'link', link: collection %}>
+            <span class="body-plus-2 cursor-pointer leading-1.5">{{ 'i18n.general.view.view_more' | t }}</span>
+            {% include "icon_arrow_tip_right", icon_class: 'product__tab-more-icon flex items-center ml-1' %}
+          </a>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </spz-carousel>
+  <spz-render
+    class="bg-color-body flex-1 mr-2 absolute right-0 top-0 z-10 lg:hidden"
+    id="product-tabs-md-render-{{ section.id }}"
+    layout="container"
+    manual
+  >
+    <template>
+      <div>
+        <div class="flex items-center justify-center" spz-if="${data.total > 1}">
+          <button
+            class="product_tab-arrows-item flex items-center justify-center rounded-full cursor-pointer color-body"
+            @tap="product-tabs-md-{{ section.id }}.goPrev;"
+          >
+            {% include 'icon_chevron_up', attr: 'prev', icon_class: 'flex-shrink-0 rotate--90' %}
+          </button>
+          <span class="mx-5">${(data.index + 1) }/${data.total}</span>
+          <button
+            class="product_tab-arrows-item flex items-center justify-center rounded-full cursor-pointer color-body"
+            @tap="product-tabs-md-{{ section.id }}.goNext;"
+          >
+            {% include 'icon_chevron_up', attr: 'next', icon_class: 'flex-shrink-0 rotate-90' %}
+          </button>
+        </div>
+      </div>
+    </template>
+  </spz-render>
+</div>
+{% schema %}
+{
+  "name": "products_tab",
+  "max_blocks": 5,
+  "settings": [
+    {
+      "type": "select",
+      "id": "columns_mobile",
+      "label": {
+        "en-US": "Mobile products per row",
+        "zh-CN": "移动端每行商品数量"
+      },
+      "default": 2,
+      "options": [
+        {
+          "value": 1,
+          "label": {
+            "en-US": "Large grid",
+            "zh-CN": "一栏"
+          }
+        },
+        {
+          "value": 2,
+          "label": {
+            "en-US": "Small grid",
+            "zh-CN": "两栏"
+          }
+        }
+      ]
+    },
+    {
+      "type": "range",
+      "id": "mobile_rows",
+      "step": 1,
+      "max": 5,
+      "min": 1,
+      "label": {
+        "en-US": "Rows of products",
+        "zh-CN": "移动端商品行数"
+      },
+      "default": 2
+    },
+    {
+      "type": "range",
+      "id": "pc_columns",
+      "step": 1,
+      "max": 6,
+      "min": 2,
+      "label": {
+        "en-US": "Desktop products per row",
+        "zh-CN": "PC端每行商品数量"
+      },
+      "default": 4
+    },
+    {
+      "type": "range",
+      "id": "rows",
+      "step": 1,
+      "max": 5,
+      "min": 1,
+      "label": {
+        "en-US": "Rows of products",
+        "zh-CN": "PC端商品行数"
+      },
+      "default": 1
+    },
+    {
+      "type": "checkbox",
+      "id": "button_on",
+      "label": {
+        "en-US": "Show view more button",
+        "zh-CN": "开启‘View more’按钮"
+      },
+      "default": true
+    },
+    {
+      "type": "spacing",
+      "id": "spacing",
+      "label": {
+        "en-US": "Spacing",
+        "zh-CN": "间距留白"
+      },
+      "pc": {
+        "top": "40",
+        "right": "",
+        "bottom": "40",
+        "left": ""
+      },
+      "mobile": {
+        "top": "20",
+        "right": "",
+        "bottom": "20",
+        "left": ""
+      },
+      "default": {
+        "pc": {
+          "top": "40",
+          "right": "",
+          "bottom": "40",
+          "left": ""
+        },
+        "mobile": {
+          "top": "20",
+          "right": "",
+          "bottom": "20",
+          "left": ""
+        }
+      }
+    }
+  ],
+  "blocks": [
+    {
+      "type": "collection_block",
+      "name": {
+        "en-US": "Product tab",
+        "zh-CN": "商品切换"
+      },
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": {
+            "en-US": "Title",
+            "zh-CN": "标题"
+          },
+          "default": "Featured collection"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": {
+            "en-US": "Collection",
+            "zh-CN": "专辑"
+          }
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "products_tab",
+      "cname": {
+        "en-US": "Products tab",
+        "zh-CN": "商品切换"
+      },
+      "category": {
+        "en-US": "Product",
+        "zh-CN": "商品"
+      },
+      "ccategory": {
+        "en-US": "Product",
+        "zh-CN": "商品"
+      },
+      "blocks": [
+        {
+          "type": "collection_block",
+          "settings": {
+            "title": "Featured collection",
+            "collection": ""
+          }
+        },
+        {
+          "type": "collection_block",
+          "settings": {
+            "title": "Featured collection",
+            "collection": ""
+          }
+        },
+        {
+          "type": "collection_block",
+          "settings": {
+            "title": "Featured collection",
+            "collection": ""
+          }
+        }
+      ],
+      "display": true
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,9 @@
+{% assign urlHasFilterParams = false %}
+{% assign querystrings = REQUEST_URI | split: "?" | last | split: "&" %}
+{% for querystring in querystrings %}
+  {% assign pair = querystring | split: "=" %}
+  {% if pair[0] == 'filter.p.vendor' or pair[0] contains 'filter.v.' %}
+    {% assign urlHasFilterParams = true %}
+    {% break %}
+  {% endif %}
+{% endfor %}

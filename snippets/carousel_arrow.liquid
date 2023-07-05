@@ -1,0 +1,40 @@
+{% stylesheet %}
+  [data-section-id="{{ section.id }}"] .roll-arrows-item {
+    width: 40px;
+    height: 40px;
+    background-color: #fff;
+  }
+
+{% endstylesheet %}
+
+<div class="flex items-center justify-between md:mt-6 {{container_class}} lg:mt-8 appearance-none">
+  <spz-render
+    class="roll-arrows flex-1 mr-2"
+    id="{{render_id}}"
+    layout="container"
+    manual>
+    <template>
+      ${function() {
+      return `
+      <div class="flex items-center justify-center" spz-if="${data.total > 1}">
+        <button
+          class="roll-arrows-item roll-arrows-item-left border flex items-center justify-center rounded-full cursor-pointer md:shadow md:bg-white lg:mr-1 {% if shop.locale == "ar-SA" %}ml-2{% endif %}"
+          @tap="{{arrow_id}}.goToSlide(index=${data.index > 0 ? (data.index - 1) : (data.total - 1)},animate=true,direct=-1);"
+          data-type="prev">
+          {% include 'icon_chevron_up', attr: 'prev', icon_class: 'flex-shrink-0 rotate--90' %}
+        </button>
+        {% if has_total %}
+          <div class="mx-5">${(data.index + 1) }/${data.total}</div>
+        {% endif %}
+        <button
+          class="roll-arrows-item roll-arrows-item-right border flex items-center justify-center rounded-full cursor-pointer md:shadow bg-white {% unless has_total %} ml-2 {% endunless %}"
+          @tap="{{arrow_id}}.goToSlide(index=${data.index < (data.total - 1) ? (data.index + 1) : 0},animate=true,direct=1);"
+          data-type="next">
+          {% include 'icon_chevron_up', attr: 'next', icon_class: 'flex-shrink-0 rotate-90' %}
+        </button>
+      </div>
+      `
+      }()}
+    </template>
+  </spz-render>
+</div>

@@ -1,0 +1,135 @@
+{% include 'blog_css' %}
+
+{% assign limit = 9 %}
+{% assign articles_count = blog.article_count %}
+{% assign page_count = articles_count | divided_by: limit | ceil %}
+{% assign default_image = 'image' | placeholder_svg %}
+
+<div class="blog-container page-container">
+  <h3 class="blog-heading type-heading-font-family color-heading break-words">{{ blog.title | escape }}</h3>
+  {% if articles_count > 0 %}
+    {% assign blogUrl = blog.url %}
+    {% if routes.root_url != '/' %}
+      {% assign blogUrl = blog.url | split: routes.root_url | last | prepend: '/' %}
+    {% endif %}
+    <spz-list
+      class="blog-list"
+      manual
+      id="blog-list-{{ section.id }}"
+      layout="container"
+      type="row"
+      list="articles"
+      initial-page="1"
+      initial-total="{{articles_count}}"
+      size="per_page"
+      page-size="{{ limit }}"
+      total="count"
+      src="{{ routes.root_url }}api/front{{ blogUrl }}/articles"
+    >
+      {% paginate blog.articles by limit %}
+        {% for article in blog.articles %}
+          {% assign image = article.image | default: default_image %}
+          {% assign url = article.url | within: blog %}
+          {% assign title = article.title %}
+          {% assign author = article.author %}
+          {% assign published_at = article.published_at %}
+          <div class="blog__item">
+            <a class="blog__item-image" href="{{ url }}">
+              <spz-img
+                src="{{ image | img_url }}"
+                layout="responsive"
+                width="100"
+                height="75"
+                alt='{{image.alt | default: title}}'
+                object-fit="cover"
+                auto-fit
+              ></spz-img>
+            </a>
+            <div class="blog__item-detail">
+              <a class="blog__item-heading text-sm lg:text-base color-body no-underline break-words" href="{{ url }}">{{ title }}</a>
+              {% if published_at or author %}
+                <a class="blog__item-desc color-text-default no-underline flex items-center" href="{{ url }}">
+                  {% if published_at %}
+                    <spz-timeago
+                      layout="container"
+                      datetime="{{published_at}}"
+                    ></spz-timeago>
+                  {% endif %}
+                  {% if author %}
+                    <span class="{% if published_at %} blog_author_dot {% endif %}">{{ "i18n.templates.blog.by" | t }} {{ author }}</span>
+                  {% endif %}
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      {% endpaginate %}
+      <template>
+        <div class="blog__item">
+          <a class="blog__item-image" href="{{ blog.url }}/${data.handle}">
+            <spz-img
+              src="${(data.image && data.image.src) || '{{ default_image | img_url }}'}"
+              layout="responsive"
+              width="100"
+              height="75"
+              alt="${data.alt || data.title}"
+              object-fit="cover"
+              auto-fit
+            ></spz-img>
+          </a>
+          <div class="blog__item-detail">
+            <a class="blog__item-heading text-sm lg:text-base color-body no-underline break-words" href="{{ blog.url }}/${data.handle}">${data.title}</a>
+            <a
+              class="blog__item-desc color-text-default no-underline flex items-center"
+              spz-if="${!!data.published_at || !!data.author}"
+              href="{{ blog.url }}/${data.handle}">
+              <spz-timeago
+                layout="container"
+                datetime="${data.published_at}"
+              ></spz-timeago>
+              <span class="${!!data.author ? 'blog_author_dot' : ''}" spz-if="${!!data.author}">{{ "i18n.templates.blog.by" | t }} ${data.author}</span>
+            </a>
+          </div>
+        </div>
+      </template>
+    </spz-list>
+
+    {% if page_count > 1 %}
+      {% include 'pagination_css' %}
+
+      <spz-pagination
+        list-id="blog-list-{{ section.id }}"
+        num-display-active='1'
+        layout="container">
+        {% include 'icon_chevron_up', attr: 'role="arrow"' %}
+      </spz-pagination>
+    {% endif %}
+  {% endif %}
+</div>
+{% schema %}
+  {
+    "name": "blog",
+    "templates": ["blog"],
+    "limit": 1,
+    "settings": [],
+    "presets": [
+      {
+        "name": "blog",
+        "cname": {
+          "zh-CN": "博客",
+          "en-US": "Blog posts"
+        },
+        "category": {
+          "en-US": "Page",
+          "zh-CN": "页面"
+        },
+        "ccategory": {
+          "en-US": "Page",
+          "zh-CN": "页面"
+        },
+        "display": true,
+        "blocks": []
+      }
+    ]
+  }
+{% endschema %}

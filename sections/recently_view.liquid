@@ -1,0 +1,141 @@
+<style>
+  @media (max-width: {{ settings.breakpoint | minus: 0.02 }}px) {
+    [data-section-id="{{ section.id }}"] .recently_view_carousel > .i-spzhtml-slides-container > .i-spzhtml-slide-item {
+      flex: unset !important;
+      flex-shrink: 0 !important;
+      width: 66.67% !important;
+      padding-right: 16px;
+    }
+  }
+
+  @media (min-width: {{ settings.breakpoint }}px) {
+    [data-section-id="{{ section.id }}"] .recently_view_container {
+      padding-top: 112px;
+    }
+
+    [data-section-id="{{ section.id }}"] .product_switch-desc {
+      width: 258px;
+    }
+
+    [data-section-id="{{ section.id }}"] .recently_view_carousel {
+      margin-left: -40px;
+    }
+
+    [data-section-id="{{ section.id }}"] .recently_view_carousel .spz-carousel-button-prev {
+      left: 56px;
+    }
+
+    [data-section-id="{{ section.id }}"] .recently_view_carousel > .i-spzhtml-slides-container > .i-spzhtml-slide-item {
+      width: 25%;
+      padding-left: 40px;
+    }
+  }
+</style>
+
+{%- comment -%} 阿拉伯语言支持 {%- endcomment -%}
+{% if shop.locale == "ar-SA" %}
+  <style>
+    @media (max-width: {{ settings.breakpoint | minus: 0.02 }}px) {
+      html[dir="rtl"] [data-section-id="{{ section.id }}"] .recently_view_carousel > .i-spzhtml-slides-container > .i-spzhtml-slide-item {
+        padding-left: 16px;
+        padding-right: 0;
+      }
+    }
+
+    @media (min-width: {{ settings.breakpoint }}px) {
+      html[dir="rtl"] [data-section-id="{{ section.id }}"] .recently_view_carousel {
+        margin-right: -40px;
+        margin-left: 0;
+      }
+
+      html[dir="rtl"] [data-section-id="{{ section.id }}"] .recently_view_carousel > .i-spzhtml-slides-container > .i-spzhtml-slide-item {
+        padding-right: 40px;
+        padding-left: 0;
+      }
+
+      html[dir="rtl"] [data-section-id="{{ section.id }}"] .recently_view_carousel .spz-carousel-button-prev {
+        left: 16px;
+      }
+
+      html[dir="rtl"] [data-section-id="{{ section.id }}"] .recently_view_carousel .spz-carousel-button-next {
+        right: 56px;
+      }
+    }
+  </style>
+{% endif %}
+
+<div class="page-container recently_view_container pt-10 mx-auto pb-8">
+  <spz-recently-viewed layout="container" count="8" list-id="recently-view-render" {% if template.name == 'product' %} product-id="{{ product.id }}" {% endif %}></spz-recently-viewed>
+  <spz-render id="recently-view-render" src="{{ '/api/product/list' | add_root_url }}?page=1&limit=8" layout="container" items="data.list" manual>
+    <template>
+      <div class="recently_view-container" spz-if="${data && data.length > 0}">
+        <h3 class="m-0 text-lg leading-1.1 color-heading type-heading-font-family overflow-hidden lg:text-2xl lg:leading-1.2">{{ 'i18n.product.product_detail.recently_viewed' | t }}</h3>
+        {% if section.settings.enable_carousel %}
+          <spz-carousel
+            class="recently_view_carousel mt-6 lg:mt-8"
+            id="recently_view_carousel"
+            controls
+            effect="scroller"
+            layout="container"
+            initial-slide="0"
+            visible-count="(min-width:960px) 4, 1.5"
+            advance-count="(min-width:960px) 1, 1"
+          >
+            <div spz-for="(item, index) in data" key="item.id">
+              {% include 'product_snippet', source_id: 'recently-view-render', product_id: '${item.id}', finish_event: "${index == 0 ? 'recently_view_carousel.calcPosition;' : ''}" %}
+            </div>
+            {% include 'icon_chevron_up', attr: 'pre', icon_class: 'md:hidden' %}
+            {% include 'icon_chevron_up', attr: 'next', icon_class: 'md:hidden' %}
+          </spz-carousel>
+        {% else %}
+          <div class="recently_view-list grid gap-y-6 lg:grid-cols-4 lg:gap-x-10 lg:gap-y-11 mt-6 lg:mt-8 ${data.length > 4 ? 'gap-x-4 grid-cols-2' : 'grid-cols-1' }">
+            <div spz-for="(item, index) in data" key="item.id">
+              {% include 'product_snippet', source_id: 'recently-view-render', product_id: '${item.id}' %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </template>
+  </spz-render>
+</div>
+
+{% schema %}
+{
+  "name": "recently_view",
+  "templates": [
+    "product",
+    "cart",
+    "collection"
+  ],
+  "limit": 1,
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "enable_carousel",
+      "label": {
+        "zh-CN": "开启轮播",
+        "en-US": "Enable carousel"
+      },
+      "default": true
+    }
+  ],
+  "presets": [
+    {
+      "name": "recently_view",
+      "cname": {
+        "en-US": "Recently viewed products",
+        "zh-CN": "最近浏览商品"
+      },
+      "category": {
+        "en-US": "Product",
+        "zh-CN": "商品"
+      },
+      "ccategory": {
+        "en-US": "Product",
+        "zh-CN": "商品"
+      },
+      "display": true
+    }
+  ]
+}
+{% endschema %}

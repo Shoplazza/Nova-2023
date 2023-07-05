@@ -1,0 +1,31 @@
+<div class="product-info-desc mt-9 lg:mt-6" {{ block.shoplaza_attributes }}>
+  {% assign type = item.type %}
+  {% assign style = item.settings.desc_style %}
+
+  {% if type == 'desc' %}
+    <spz-accordion layout="container" animate>
+      <section class="product-info-desc-item" {% if style == 'visible' %} expanded {% endif %}>
+        <div class="product-info-desc-item-header flex justify-between break-words">
+          <div class="flex-1 lg:body-plus-3">{{ 'i18n.product.product_detail.product_description' | t }}</div>
+          {% include 'icon_arrow_right', icon_class: 'flex-shrink-0 rotate-180' %}
+        </div>
+        <div class="product-info-desc-item-content mce-content">
+          {{ product.description | spz_img }}
+        </div>
+      </section>
+    </spz-accordion>
+  {% elsif type == 'custom' and page_id %}
+    {% assign page = pages[page_id] %}
+    <spz-accordion layout="container" animate>
+      <section class="product-info-desc-item" {% if style == 'visible' %} expanded {% endif %}>
+        <div class="product-info-desc-item-header flex justify-between break-words">
+          <div class="flex-1 lg:body-plus-3">{{ page.title | escape }}</div>
+          {% include 'icon_arrow_right', icon_class: 'flex-shrink-0 rotate-180' %}
+        </div>
+        <div class="product-info-desc-item-content mce-content">
+          {{ page.content | spz_img }}
+        </div>
+      </section>
+    </spz-accordion>
+  {% endif %}
+</div>
